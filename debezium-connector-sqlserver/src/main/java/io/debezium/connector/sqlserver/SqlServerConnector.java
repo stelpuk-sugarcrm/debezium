@@ -5,8 +5,8 @@
  */
 package io.debezium.connector.sqlserver;
 
+import static io.debezium.config.SqlServerTaskConfig.TASK_DATABASE_NAMES;
 import static io.debezium.connector.sqlserver.SqlServerConnectorConfig.DATABASE_NAMES;
-import static io.debezium.connector.sqlserver.SqlServerConnectorConfig.TASK_DATABASE_NAMES;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -11,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,6 +27,7 @@ import io.debezium.annotation.SingleThreadAccess;
 import io.debezium.config.CommonConnectorConfig;
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
+import io.debezium.config.SqlServerTaskConfig;
 import io.debezium.pipeline.ChangeEventSourceCoordinator;
 import io.debezium.pipeline.spi.OffsetContext;
 import io.debezium.util.Clock;
@@ -112,11 +114,23 @@ public abstract class BaseSourceTask<P extends TaskPartition, O extends OffsetCo
             }
 
             this.props = props;
+            Properties taskProps = new Properties();
+            SqlServerTaskConfig.ALL_FIELDS.forEach(field -> {
+                if (props.get(field.name()) != null) {
+                    taskProps.put(field.name(), props.get(field.name()));
+                }
+            });
             Configuration config = Configuration.from(props);
+            Configuration taskConfig = Configuration.from(taskProps);
+
             retriableRestartWait = config.getDuration(CommonConnectorConfig.RETRIABLE_RESTART_WAIT, ChronoUnit.MILLIS);
             // need to reset the delay or you only get one delayed restart
             restartDelay = null;
             if (!config.validateAndRecord(getAllConfigurationFields(), LOGGER::error)) {
+                throw new ConnectException("Error configuring an instance of " + getClass().getSimpleName() + "; check the logs for details");
+            }
+
+            if (!taskConfig.validateAndRecord(SqlServerTaskConfig.ALL_FIELDS, LOGGER::error)) {
                 throw new ConnectException("Error configuring an instance of " + getClass().getSimpleName() + "; check the logs for details");
             }
 
@@ -127,7 +141,7 @@ public abstract class BaseSourceTask<P extends TaskPartition, O extends OffsetCo
                 });
             }
 
-            this.coordinator = start(config);
+            this.coordinator = start(config, taskConfig);
         }
         finally {
             stateLock.unlock();
@@ -141,7 +155,7 @@ public abstract class BaseSourceTask<P extends TaskPartition, O extends OffsetCo
      *            the task configuration; implementations should wrap it in a dedicated implementation of
      *            {@link CommonConnectorConfig} and work with typed access to configuration properties that way
      */
-    protected abstract ChangeEventSourceCoordinator<P, O> start(Configuration config);
+    protected abstract ChangeEventSourceCoordinator<P, O> start(Configuration config, Configuration taskConfig);
 
     @Override
     public final List<SourceRecord> poll() throws InterruptedException {

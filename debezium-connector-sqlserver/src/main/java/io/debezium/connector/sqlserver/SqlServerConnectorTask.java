@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
+import io.debezium.config.SqlServerTaskConfig;
 import io.debezium.connector.base.ChangeEventQueue;
 import io.debezium.connector.common.BaseSourceTask;
 import io.debezium.connector.common.TaskOffsetContext;
@@ -56,9 +57,10 @@ public class SqlServerConnectorTask extends BaseSourceTask<SqlServerTaskPartitio
     }
 
     @Override
-    public ChangeEventSourceCoordinator<SqlServerTaskPartition, SqlServerOffsetContext> start(Configuration config) {
+    public ChangeEventSourceCoordinator<SqlServerTaskPartition, SqlServerOffsetContext> start(Configuration config, Configuration taskConfig) {
         final Clock clock = Clock.system();
         final SqlServerConnectorConfig connectorConfig = new SqlServerConnectorConfig(config);
+        final SqlServerTaskConfig sqlTaskConfig = new SqlServerTaskConfig(taskConfig);
         final TopicSelector<TableId> topicSelector = SqlServerTopicSelector.defaultSelector(connectorConfig);
         final SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.create(LOGGER);
         final SqlServerValueConverters valueConverters = new SqlServerValueConverters(connectorConfig.getDecimalMode(),
@@ -86,7 +88,7 @@ public class SqlServerConnectorTask extends BaseSourceTask<SqlServerTaskPartitio
                 context.offsetStorageReader(),
                 new SqlServerOffsetContext.Loader(connectorConfig));
         TaskOffsetContext<SqlServerTaskPartition, SqlServerOffsetContext> taskOffsetContext = loader.load(
-                new SqlServerTaskPartition.Provider(connectorConfig, config, metadataConnection).getPartitions());
+                new SqlServerTaskPartition.Provider(connectorConfig, sqlTaskConfig, metadataConnection).getPartitions());
 
         schema = new SqlServerDatabaseSchema(connectorConfig, valueConverters, topicSelector, schemaNameAdjuster);
         schema.initializeStorage();

@@ -20,6 +20,8 @@ import org.apache.kafka.connect.connector.Connector;
 import org.junit.Before;
 import org.junit.Test;
 
+import io.debezium.config.SqlServerTaskConfig;
+
 public class SqlServerConnectorTest {
     SqlServerConnector connector;
 
@@ -34,7 +36,7 @@ public class SqlServerConnectorTest {
         config.put(SqlServerConnectorConfig.HOSTNAME.name(), "narnia");
         config.put(SqlServerConnectorConfig.PORT.name(), "4321");
         config.put(SqlServerConnectorConfig.DATABASE_NAMES.name(), "sqlserver");
-        config.put(SqlServerConnectorConfig.TASK_DATABASE_NAMES.name(), "sqlserver");
+        config.put(SqlServerTaskConfig.TASK_DATABASE_NAMES.name(), "sqlserver");
         config.put(SqlServerConnectorConfig.USER.name(), "pikachu");
         config.put(SqlServerConnectorConfig.PASSWORD.name(), "raichu");
 
@@ -59,7 +61,7 @@ public class SqlServerConnectorTest {
         connector.start(config);
         List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
         assertThat(taskConfigs.size()).isEqualTo(1);
-        assertThat(taskConfigs.get(0).get(SqlServerConnectorConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database1,database2");
+        assertThat(taskConfigs.get(0).get(SqlServerTaskConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database1,database2");
     }
 
     @Test
@@ -75,8 +77,8 @@ public class SqlServerConnectorTest {
         connector.start(config);
         List<Map<String, String>> taskConfigs = connector.taskConfigs(2);
         assertThat(taskConfigs.size()).isEqualTo(2);
-        assertThat(taskConfigs.get(0).get(SqlServerConnectorConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database1");
-        assertThat(taskConfigs.get(1).get(SqlServerConnectorConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database2");
+        assertThat(taskConfigs.get(0).get(SqlServerTaskConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database1");
+        assertThat(taskConfigs.get(1).get(SqlServerTaskConfig.TASK_DATABASE_NAMES.name())).isEqualTo("database2");
     }
 
     @Test
